@@ -168,7 +168,7 @@ fn main() {
                 if let Some(caps) = re.captures(message) {
                     if &caps["nick"] == STANDUP_NICK {
                         if let Some(nickname) = msg.source_nickname() {
-                            db.add(nickname, message);
+                            db.add(nickname, &caps["msg"]);
                         }
                     }
                     if &caps["nick"] == BOT_NICK {
