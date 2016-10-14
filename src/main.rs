@@ -1,19 +1,22 @@
 extern crate hyper;
 extern crate irc;
+extern crate mime;
 extern crate regex;
 extern crate rusqlite;
 extern crate rustc_serialize;
 extern crate time;
+extern crate url;
 
 mod bzapi;
+mod pastebin;
 
+use irc::client::data::Command::{PRIVMSG};
+use irc::client::prelude::*;
+use regex::Regex;
+use rusqlite::Connection;
 use std::collections::HashMap;
 use std::default::Default;
 use std::thread::spawn;
-use irc::client::prelude::*;
-use irc::client::data::Command::{PRIVMSG};
-use regex::Regex;
-use rusqlite::Connection;
 use time::Timespec;
 
 fn titlecase(input: &str) -> String {
@@ -149,7 +152,7 @@ fn main() {
     let config = Config {
         nickname: Some(String::from(BOT_NICK)),
         server: Some(String::from("irc.mozilla.org")),
-        channels: Some(vec![String::from("#statusbot")]),
+        channels: Some(vec![String::from("#statusbot"), String::from("#perf-tw")]),
         .. Default::default()
     };
     let server = IrcServer::from_config(config).unwrap();
@@ -170,8 +173,19 @@ fn main() {
                     }
                     if &caps["nick"] == BOT_NICK {
                         if let Some(dates) = report_re.captures(&caps["msg"]) {
-                            println!("{}", summarize_reports(db.reports(&dates["start"], &dates["end"])));
-                            server.send_privmsg(target, "done").unwrap();
+                            let server = server.clone();
+                            let target = target.clone();
+                            let reports = db.reports(&dates["start"], &dates["end"]);
+                            spawn(move || {
+                                let text = summarize_reports(reports);
+                                let url = pastebin::paste(text);
+                                match url {
+                                    Ok(url) => {
+                                        server.send_privmsg(&target, &format!("Report generated: {}", url))
+                                    },
+                                    Err(_) => server.send_privmsg(&target, "network error")
+                                }
+                            });
                         }
                     }
                 }
