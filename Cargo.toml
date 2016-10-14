@@ -1,0 +1,7 @@
+[package]
+name = "statusbot"
+version = "0.1.0"
+authors = ["Kan-Ru Chen <kanru@kanru.info>"]
+
+[dependencies]
+irc = "0.11.0"
