@@ -5,7 +5,9 @@ authors = ["Kan-Ru Chen <kanru@kanru.info>"]
 
 [dependencies]
 futures = "0.1"
+hyper = "0.9"
 irc = "0.11"
 regex = "0.1"
 rusqlite = "0.7"
+rustc-serialize = "0.3"
 time = "0.1"
